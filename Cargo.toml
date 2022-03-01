@@ -1,0 +1,18 @@
+[package]
+name = "hello-os"
+version = "0.0.0"
+edition = "2022"
+
+# 在其它一些情况下，栈展开并不是迫切需求的功能；因此，Rust 提供了在 panic 时中止（abort on panic）的选项。
+# 这个选项能禁用栈展开相关的标志信息生成，也因此能缩小生成的二进制程序的长度。
+# 有许多方式能打开这个选项，最简单的方式是把下面的几行设置代码
+# 这些选项能将 dev 配置（dev profile）和 release 配置（release profile）的 panic 策略设为 abort。dev 配置适用于 cargo build，而 release 配置适用于 cargo build --release。现在编译器应该不再要求我们提供 eh_personality 语言项实现。
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
