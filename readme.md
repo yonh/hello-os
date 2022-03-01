@@ -29,6 +29,8 @@ brew install qemu
 # 启动 hello-os
 qemu-system-x86_64 -drive format=raw,file=target/x86_64-hello-os/debug/bootimage-hello-os.bin
 
+# 编译并运行（此命令需要先配置好 .cargo/config )
+cargo xrun
 ```
 
 # cargo bootimage命令背后

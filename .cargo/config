@@ -6,3 +6,14 @@ target = ".cargo/x86_64-hello-os.json"
 #[unstable]
 #build-std-features = ["compiler-builtins-mem"]
 #build-std = ["core", "compiler_builtins"]
+
+
+# 在这里，target.'cfg(target_os = "none")' 筛选了三元组中宿主系统设置为 "none" 的所有编译目标——这将包含我们的 x86_64-hello-os.json 目标。
+# 另外，runner 的值规定了运行 cargo run 使用的命令；这个命令将在成功编译后执行，而且会传递可执行文件的路径为第一个参数。官方提供的 cargo 文档讲述了更多的细节。
+
+# 命令 bootimage runner 由 bootimage 包提供，参数格式经过特殊设计，可以用于 runner 命令。
+# 它将给定的可执行文件与项目的引导程序依赖项链接，然后在 QEMU 中启动它。bootimage 包的文档 提供了更多细节和可以传入的配置参数。
+
+# 现在我们可以使用 cargo xrun 来编译内核并在 QEMU 中启动了。xrun 子命令将在调用 cargo 命令前编译内核所需的包。这个子命令也由 cargo-xbuild 工具提供。
+[target.'cfg(target_os = "none")']
+runner = "bootimage runner"
