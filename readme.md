@@ -12,5 +12,7 @@ rustup override add nightly
 cargo install cargo-xbuild
 # 下载rust源码
 rustup component add rust-src
+# 编译
+cargo xbuild
 ```
 

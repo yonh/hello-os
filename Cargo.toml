@@ -1,7 +1,7 @@
 [package]
 name = "hello-os"
 version = "0.0.0"
-edition = "2022"
+edition = "2021"
 
 # 在其它一些情况下，栈展开并不是迫切需求的功能；因此，Rust 提供了在 panic 时中止（abort on panic）的选项。
 # 这个选项能禁用栈展开相关的标志信息生成，也因此能缩小生成的二进制程序的长度。
