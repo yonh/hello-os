@@ -1,2 +1,8 @@
+# https://doc.rust-lang.org/cargo/reference/config.html
+
 [build]
 target = ".cargo/x86_64-hello-os.json"
+
+#[unstable]
+#build-std-features = ["compiler-builtins-mem"]
+#build-std = ["core", "compiler_builtins"]
