@@ -11,12 +11,12 @@ lazy_static!{
     /// 自旋锁并不会调用阻塞逻辑，而是在一个小的无限循环中反复尝试获得这个锁，也因此会一直占用 CPU 时间，直到互斥锁被它的占用者释放。
     pub static ref WRITER: Mutex<Writer> = Mutex::new(
 
-        /// 创建一个指向 0xb8000 地址VGA缓冲区的 Writer。
-        /// 实现这一点，我们需要编写的代码可能看起来有点奇怪：
-        /// 首先，我们把整数 0xb8000 强制转换为一个可变的裸指针（raw pointer）；
-        /// 之后，通过运算符*，我们将这个裸指针解引用；
-        /// 最后，我们再通过 &mut，再次获得它的可变借用。
-        /// 这些转换需要 unsafe 语句块（unsafe block），因为编译器并不能保证这个裸指针是有效的。
+        // 创建一个指向 0xb8000 地址VGA缓冲区的 Writer。
+        // 实现这一点，我们需要编写的代码可能看起来有点奇怪：
+        // 首先，我们把整数 0xb8000 强制转换为一个可变的裸指针（raw pointer）；
+        // 之后，通过运算符*，我们将这个裸指针解引用；
+        // 最后，我们再通过 &mut，再次获得它的可变借用。
+        // 这些转换需要 unsafe 语句块（unsafe block），因为编译器并不能保证这个裸指针是有效的。
         Writer {
             column_position: 0,
             color_code: ColorCode::new(Color::Yellow, Color::Black),
@@ -158,4 +158,25 @@ impl fmt::Write for Writer {
         self.write_string(s);
         Ok(())
     }
+}
+
+
+// #[macro_export] 属性让整个包（crate）和基于它的包都能访问这个宏，而不仅限于定义它的模块（module）。
+// 它还将把宏置于包的根模块（crate root）下，这意味着比如我们需要通过 use std::println 来导入这个宏，而不是通过 std::macros::println。
+#[macro_export]
+macro_rules! print {
+    ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
+}
+
+#[macro_export]
+macro_rules! println {
+    () => ($crate::print!("\n"));
+    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
+}
+
+// 考虑到这是一个私有的实现细节，我们添加一个 doc(hidden) 属性，防止它在生成的文档中出现。
+#[doc(hidden)]
+pub fn _print(args: fmt::Arguments) {
+    use core::fmt::Write;
+    WRITER.lock().write_fmt(args).unwrap();
 }

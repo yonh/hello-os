@@ -3,7 +3,7 @@
 
 mod vga_buffer;
 
-use core::panic::PanicInfo;
+use core::panic::{PanicInfo, self};
 
 static HELLO: &[u8] = b"Hello World!";
 
@@ -14,10 +14,12 @@ static HELLO: &[u8] = b"Hello World!";
 pub extern "C" fn _start() -> ! {
 
     // 测试输出一些内容到屏幕上
-    use core::fmt::Write;
+    // use core::fmt::Write;
+    // vga_buffer::WRITER.lock().write_str("Hello again").unwrap();
+    // write!(vga_buffer::WRITER.lock(), ", some numbers: {} {}", 1, 1.234).unwrap();
 
-    vga_buffer::WRITER.lock().write_str("Hello again").unwrap();
-    write!(vga_buffer::WRITER.lock(), ", some numbers: {} {}", 1, 1.234).unwrap();
+    println!("hello world!");
+    panic!("Some panic message");
 
     loop {}
 }
@@ -27,6 +29,8 @@ pub extern "C" fn _start() -> ! {
 /// 类型为 PanicInfo 的参数包含了 panic 发生的文件名、代码行数和可选的错误信息。这个函数从不返回，所以他被标记为发散函数（diverging function）。
 /// 发散函数的返回类型称作 Never 类型（“never” type），记为!。对这个函数，我们目前能做的很少，所以我们只需编写一个无限循环 loop {}。
 #[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
+fn panic(info: &PanicInfo) -> ! {
+    println!("{}", info);
     loop {}
 }
+
