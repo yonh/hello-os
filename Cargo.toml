@@ -17,7 +17,7 @@ panic = "abort"
 
 [dependencies]
 bootloader = "0.9.3"
-
+volatile = "0.2.6"
 
 #因为cargo bootimage默认使用build，而不是xbuild。
 [package.metadata.bootimage]

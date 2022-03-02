@@ -44,6 +44,7 @@ cargo xrun
 我们也可以使用 dd 工具把内核写入 U 盘，以便在真机上启动。可以输入下面的命令：
 
 > dd if=target/x86_64-blog_os/debug/bootimage-blog_os.bin of=/dev/sdX && sync
+
 在这里，sdX 是U盘的设备名（device name）。请注意，在选择设备名的时候一定要极其小心，因为目标设备上已有的数据将全部被擦除。
 
 写入到 U 盘之后，你可以在真机上通过引导启动你的系统。视情况而定，你可能需要在 BIOS 中打开特殊的启动菜单，或者调整启动顺序。需要注意的是，bootloader 包暂时不支持 UEFI，所以我们并不能在 UEFI 机器上启动。
