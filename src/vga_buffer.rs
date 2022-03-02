@@ -1,4 +1,5 @@
 use volatile::Volatile;
+use core::fmt;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -106,6 +107,13 @@ impl Writer {
     fn new_line(&mut self) {/* TODO */}
 }
 
+impl fmt::Write for Writer {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.write_string(s);
+        Ok(())
+    }
+}
+
 /// 这个函数首先创建一个指向 0xb8000 地址VGA缓冲区的 Writer。
 /// 实现这一点，我们需要编写的代码可能看起来有点奇怪：
 /// 首先，我们把整数 0xb8000 强制转换为一个可变的裸指针（raw pointer）；
@@ -113,6 +121,8 @@ impl Writer {
 /// 最后，我们再通过 &mut，再次获得它的可变借用。
 /// 这些转换需要 unsafe 语句块（unsafe block），因为编译器并不能保证这个裸指针是有效的。
 pub fn print_something() {
+    use core::fmt::Write;
+
     let mut writer = Writer {
         column_position: 0,
         color_code: ColorCode::new(Color::Yellow, Color::Black),
@@ -126,4 +136,7 @@ pub fn print_something() {
     writer.write_string("ello ");
     writer.write_string("Wörld!");
     writer.write_string("你好");
+
+    // write! 宏返回的 Result 类型必须被使用，所以我们调用它的 unwrap 方法，它将在错误发生时 panic。这里的情况下应该不会发生这样的问题，因为写入 VGA 字符缓冲区并没有可能失败。
+    write!(writer, "the numbers are {} and {}!", 1, 1.0/3.0).unwrap();
 }
