@@ -104,7 +104,29 @@ impl Writer {
         }
     }
 
-    fn new_line(&mut self) {/* TODO */}
+    /// 遍历每个屏幕上的字符，把每个字符移动到它上方一行的相应位置。
+    /// 我们从第 1 行开始，省略了对第 0 行的枚举过程——因为这一行应该被移出屏幕，即它将被下一行的字符覆写。
+    fn new_line(&mut self) {
+        for row in 1..BUFFER_HEIGHT {
+            for col in 0..BUFFER_WIDTH {
+                let character = self.buffer.chars[row][col].read();
+                self.buffer.chars[row - 1][col].write(character);
+            }
+        }
+        self.clear_row(BUFFER_HEIGHT - 1);
+        self.column_position = 0;
+    }
+
+    fn clear_row(&mut self, row: usize) {
+        let blank = ScreenChar {
+            ascii_character: b' ',
+            color_code: self.color_code,
+        };
+        // 缓冲区写入空格字符来清空一整行的字符。
+        for col in 0..BUFFER_WIDTH {
+            self.buffer.chars[row][col].write(blank);
+        }
+    }
 }
 
 impl fmt::Write for Writer {
@@ -135,7 +157,7 @@ pub fn print_something() {
     writer.write_byte(b'H');
     writer.write_string("ello ");
     writer.write_string("Wörld!");
-    writer.write_string("你好");
+    writer.write_string("你好\n");
 
     // write! 宏返回的 Result 类型必须被使用，所以我们调用它的 unwrap 方法，它将在错误发生时 panic。这里的情况下应该不会发生这样的问题，因为写入 VGA 字符缓冲区并没有可能失败。
     write!(writer, "the numbers are {} and {}!", 1, 1.0/3.0).unwrap();
