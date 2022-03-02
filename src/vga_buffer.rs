@@ -1,5 +1,29 @@
 use volatile::Volatile;
 use core::fmt;
+use lazy_static::lazy_static;
+use spin::Mutex;
+
+
+/// 定义了一个延迟初始化（lazily initialized）的静态变量；这个变量的值将在第一次使用时计算，而非在编译时计算。
+lazy_static!{
+    /// 要定义同步的内部可变性，我们往往使用标准库提供的互斥锁类 Mutex，它通过提供当资源被占用时将线程阻塞（block）的互斥条件（mutual exclusion）实现这一点；
+    /// 但我们初步的内核代码还没有线程和阻塞的概念，我们将不能使用这个类。不过，我们还有一种较为基础的互斥锁实现方式——自旋锁（spinlock）。
+    /// 自旋锁并不会调用阻塞逻辑，而是在一个小的无限循环中反复尝试获得这个锁，也因此会一直占用 CPU 时间，直到互斥锁被它的占用者释放。
+    pub static ref WRITER: Mutex<Writer> = Mutex::new(
+
+        /// 创建一个指向 0xb8000 地址VGA缓冲区的 Writer。
+        /// 实现这一点，我们需要编写的代码可能看起来有点奇怪：
+        /// 首先，我们把整数 0xb8000 强制转换为一个可变的裸指针（raw pointer）；
+        /// 之后，通过运算符*，我们将这个裸指针解引用；
+        /// 最后，我们再通过 &mut，再次获得它的可变借用。
+        /// 这些转换需要 unsafe 语句块（unsafe block），因为编译器并不能保证这个裸指针是有效的。
+        Writer {
+            column_position: 0,
+            color_code: ColorCode::new(Color::Yellow, Color::Black),
+            buffer: unsafe { &mut *(0xb8000 as *mut Buffer) }
+        }
+    );
+}
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -134,31 +158,4 @@ impl fmt::Write for Writer {
         self.write_string(s);
         Ok(())
     }
-}
-
-/// 这个函数首先创建一个指向 0xb8000 地址VGA缓冲区的 Writer。
-/// 实现这一点，我们需要编写的代码可能看起来有点奇怪：
-/// 首先，我们把整数 0xb8000 强制转换为一个可变的裸指针（raw pointer）；
-/// 之后，通过运算符*，我们将这个裸指针解引用；
-/// 最后，我们再通过 &mut，再次获得它的可变借用。
-/// 这些转换需要 unsafe 语句块（unsafe block），因为编译器并不能保证这个裸指针是有效的。
-pub fn print_something() {
-    use core::fmt::Write;
-
-    let mut writer = Writer {
-        column_position: 0,
-        color_code: ColorCode::new(Color::Yellow, Color::Black),
-        buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
-    };
-
-    // 注意输出：需要注意的是，ö 字符被打印为两个 ■ 字符。"你好" 被打印为六个■
-    // 这是因为在 UTF-8 编码下，字符 ö 是由两个字节表述的——而这两个字节并不处在可打印的 ASCII 码字节范围之内。
-    // 事实上，这是 UTF-8 编码的基本特点之一：如果一个字符占用多个字节，那么每个组成它的独立字节都不是有效的 ASCII 码字节（the individual bytes of multi-byte values are never valid ASCII）。
-    writer.write_byte(b'H');
-    writer.write_string("ello ");
-    writer.write_string("Wörld!");
-    writer.write_string("你好\n");
-
-    // write! 宏返回的 Result 类型必须被使用，所以我们调用它的 unwrap 方法，它将在错误发生时 panic。这里的情况下应该不会发生这样的问题，因为写入 VGA 字符缓冲区并没有可能失败。
-    write!(writer, "the numbers are {} and {}!", 1, 1.0/3.0).unwrap();
 }

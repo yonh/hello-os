@@ -7,21 +7,17 @@ use core::panic::PanicInfo;
 
 static HELLO: &[u8] = b"Hello World!";
 
+
+/// 因为编译器会寻找一个名为 `_start` 的函数，所以这个函数就是入口点
+/// 默认命名为 `_start`
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
-    // 因为编译器会寻找一个名为 `_start` 的函数，所以这个函数就是入口点
-    // 默认命名为 `_start`
 
-    // let vga_buffer = 0xb8000 as *mut u8;
-
-    // for (i, &byte) in HELLO.iter().enumerate() {
-    //     unsafe {
-    //         *vga_buffer.offset(i as isize * 2) = byte;
-    //         *vga_buffer.offset(i as isize * 2 + 1) = 0xb;
-    //     }
-    // }
     // 测试输出一些内容到屏幕上
-    vga_buffer::print_something();
+    use core::fmt::Write;
+
+    vga_buffer::WRITER.lock().write_str("Hello again").unwrap();
+    write!(vga_buffer::WRITER.lock(), ", some numbers: {} {}", 1, 1.234).unwrap();
 
     loop {}
 }
