@@ -19,6 +19,7 @@ panic = "abort"
 bootloader = "0.9.3"
 volatile = "0.2.6"
 spin = "0.9.2"
+x86_64 = "0.14.2"
 
 [dependencies.lazy_static]
 version = "1.0"
@@ -29,3 +30,10 @@ features = ["spin_no_std"]
 #因为cargo bootimage默认使用build，而不是xbuild。
 [package.metadata.bootimage]
 build-command = ["xbuild"]
+# QEMU支持一种名为 isa-debug-exit的特殊设备，它提供了一种从客户系统（guest system）里退出QEMU的简单方式。
+# 为了使用这个设备，我们需要向QEMU传递一个-device参数。当然，我们也可以通过将 package.metadata.bootimage.test-args 配置关键字来实现效果
+# bootimage runner 会在QEMU的默认测试命令后添加test-args 参数。（对于cargo xrun命令，这个参数会被忽略。）
+# 我们还传递了两个参数，iobase 和 iosize 。这两个参数指定了一个_I/O 端口_，我们的内核将通过它来访问设备。
+test-args = ["-device", "isa-debug-exit,iobase=0xf4,iosize=0x04"]
+# cargo test 会将所有非0的错误码都视为测试失败, 所以需要配置自定义成功退出码。
+test-success-exit-code = 33         # (0x10 << 1) | 1

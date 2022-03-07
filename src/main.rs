@@ -60,6 +60,8 @@ fn test_runner(tests: &[&dyn Fn()]) {
     for test in tests {
         test();
     }
+
+    exit_qemu( QemuExitCode::Success);
 }
 
 #[test_case]
@@ -67,4 +69,23 @@ fn trivial_assertion() {
     print!("trivial assertion... ");
     assert_eq!(1, 1);
     println!("[ok]");
+}
+
+/// isa-debug-exit设备的功能非常简单。当一个 value写入iobase指定的端口时，它会导致QEMU以退出状态（exit status）(value << 1) | 1退出。
+/// 也就是说，当我们向端口写入0时，QEMU将以退出状态(0 << 1) | 1 = 1退出，而当我们向端口写入1时，它将以退出状态(1 << 1) | 1 = 3退出。
+/// 这里我们使用 x86_64 crate提供的抽象，而不是手动调用in或out指令。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
+pub enum QemuExitCode {
+    Success = 0x10,
+    Failed = 0x11,
+}
+
+pub fn exit_qemu(exit_code: QemuExitCode) {
+    use x86_64::instructions::port::Port;
+
+    unsafe {
+        let mut port = Port::new(0xf4);
+        port.write(exit_code as u32);
+    }
 }
