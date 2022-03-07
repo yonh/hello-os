@@ -9,6 +9,7 @@
 #![reexport_test_harness_main = "test_main"]
 
 mod vga_buffer;
+mod serial;
 
 use core::panic::{PanicInfo, self};
 
@@ -43,9 +44,20 @@ pub extern "C" fn _start() -> ! {
 /// 这个函数将在 panic 时被调用 
 /// 类型为 PanicInfo 的参数包含了 panic 发生的文件名、代码行数和可选的错误信息。这个函数从不返回，所以他被标记为发散函数（diverging function）。
 /// 发散函数的返回类型称作 Never 类型（“never” type），记为!。对这个函数，我们目前能做的很少，所以我们只需编写一个无限循环 loop {}。
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
+    loop {}
+}
+
+#[cfg(test)]
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    println!("{}", info);
+    serial_println!("[failed]\n");
+    serial_println!("Error: {}\n", info);
+    exit_qemu(QemuExitCode::Failed);
     loop {}
 }
 
@@ -56,7 +68,7 @@ fn panic(info: &PanicInfo) -> ! {
 /// 为了修复这个问题，我们需要通过 reexport_test_harness_main 属性来将生成的函数的名称更改为与main不同的名称。然后我们可以在我们的 _start 函数里调用这个重命名的函数:
 #[cfg(test)]
 fn test_runner(tests: &[&dyn Fn()]) {
-    println!("Running {} tests", tests.len());
+    serial_println!("Running {} tests", tests.len());
     for test in tests {
         test();
     }
@@ -66,9 +78,9 @@ fn test_runner(tests: &[&dyn Fn()]) {
 
 #[test_case]
 fn trivial_assertion() {
-    print!("trivial assertion... ");
+    serial_print!("trivial assertion... ");
     assert_eq!(1, 1);
-    println!("[ok]");
+    serial_println!("[ok]");
 }
 
 /// isa-debug-exit设备的功能非常简单。当一个 value写入iobase指定的端口时，它会导致QEMU以退出状态（exit status）(value << 1) | 1退出。
